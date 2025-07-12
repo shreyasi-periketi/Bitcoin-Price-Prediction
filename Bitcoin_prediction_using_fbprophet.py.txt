@@ -1,0 +1,78 @@
+### Importing all necessary libraries
+
+import pandas as pd
+from prophet import Prophet
+import plotly.offline as py
+import plotly.graph_objs as go
+import plotly.express as px
+import plotly.io as pio
+
+### pio.renderers.default = 'browser_name' (eg:colab)
+py.init_notebook_mode()
+
+### importing the dataset and analyzing
+import pandas_datareader as pdr
+key="71e09b271ddc903da056d27b217b5854fe6559cb"
+import requests
+headers = {
+        'Content-Type': 'application/json'
+        }
+requestResponse = requests.get("https://api.tiingo.com/api/test?token=71e09b271ddc903da056d27b217b5854fe6559cb",
+                                    headers=headers)
+print(requestResponse.json())
+
+df = pdr.get_data_tiingo('btcusd', api_key=key)
+
+df.to_csv('btc_data.csv')
+
+df = pd.read_csv('btc_data.csv')
+
+df.head()
+
+df.tail()
+
+df
+
+### To create Area chart
+px.area(df, x='date', y='close')
+
+### To create Line Chart 
+px.line(df, x='date', y='volume')
+
+### To create Violin Chart
+px.violin(df, y='close')
+
+### To create Candlesticks chart
+fig = go.Figure(go.Candlestick(
+                x = df['date'],
+                open = df['open'],
+                high = df['high'],
+                low = df['low'],
+                close = df['close']
+               ))
+fig.show()
+
+df
+
+columns = ['date','close']
+
+df1 = pd.DataFrame(df, columns=columns)
+
+df1
+
+prophet_df = df1.rename(columns = {'date':'ds', 'close':'y'})
+
+prophet_df
+m = Prophet()
+
+m.fit(prophet_df)
+
+future = m.make_future_dataframe(periods=30)
+future
+
+forecast = m.predict(future)
+forecast
+
+figure = m.plot(forecast, xlabel='ds', ylabel='y')
+figure2 = m.plot_components(forecast)
+forecast.to_csv('forecast.csv')
